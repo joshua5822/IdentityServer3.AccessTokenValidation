@@ -23,6 +23,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 
+using Microsoft.IdentityModel.Tokens;
+
 namespace IdentityServer3.AccessTokenValidation
 {
     /// <summary>
@@ -37,7 +39,7 @@ namespace IdentityServer3.AccessTokenValidation
         {
             NameClaimType = "name";
             RoleClaimType = "role";
-
+            TokenValidationParameters = new TokenValidationParameters();
             ValidationMode = ValidationMode.Both;
             RequiredScopes = Enumerable.Empty<string>();
             ValidationResultCacheDuration = TimeSpan.FromMinutes(5);
@@ -206,5 +208,17 @@ namespace IdentityServer3.AccessTokenValidation
         /// Default is 1 day.
         /// </summary>
         public TimeSpan AutomaticRefreshInterval { get; set; }
+
+        /// <summary>
+        /// Gets or sets the parameters used to validate identity tokens.
+        /// </summary>
+        /// <exceptions>
+        /// T:System.ArgumentNullException:
+        ///     if 'value' is null.
+        /// </exceptions>
+        /// <remarks>
+        /// Contains the types and definitions required for validating a token.
+        /// </remarks>
+        public TokenValidationParameters TokenValidationParameters { get; set; }
     }
 }

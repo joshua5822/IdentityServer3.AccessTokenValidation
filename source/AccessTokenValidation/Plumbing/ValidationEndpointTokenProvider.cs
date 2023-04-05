@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-using IdentityModel.Extensions;
 using Microsoft.Owin.Logging;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Infrastructure;
@@ -25,6 +24,8 @@ using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
+
+using IdentityServer3.AccessTokenValidation.Extensions;
 
 namespace IdentityServer3.AccessTokenValidation
 {

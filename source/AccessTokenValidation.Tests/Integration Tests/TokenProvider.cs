@@ -12,6 +12,8 @@ using Microsoft.Owin.Security.OAuth;
 using System.Net;
 using System.Net.Http;
 
+using IdentityModel.Client;
+
 namespace AccessTokenValidation.Tests.Integration_Tests
 {
     public class TokenProvider

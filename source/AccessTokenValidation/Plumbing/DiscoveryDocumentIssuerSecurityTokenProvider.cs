@@ -19,20 +19,22 @@ using Microsoft.Owin.Logging;
 using Microsoft.Owin.Security.Jwt;
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading;
 
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
+
 namespace IdentityServer3.AccessTokenValidation
 {
-    internal class DiscoveryDocumentIssuerSecurityTokenProvider : IIssuerSecurityTokenProvider
+    internal class DiscoveryDocumentIssuerSecurityTokenProvider : IIssuerSecurityKeyProvider
     {
         private readonly ReaderWriterLockSlim _synclock = new ReaderWriterLockSlim();
         private readonly ConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
         private readonly ILogger _logger;
         private string _issuer;
-        private IEnumerable<SecurityToken> _tokens;
+        private IEnumerable<SecurityKey> _tokens;
 
         public DiscoveryDocumentIssuerSecurityTokenProvider(string discoveryEndpoint, IdentityServerBearerTokenAuthenticationOptions options, ILoggerFactory loggerFactory)
         {
@@ -51,7 +53,8 @@ namespace IdentityServer3.AccessTokenValidation
                 webRequestHandler.ServerCertificateValidationCallback = options.BackchannelCertificateValidator.Validate;
             }
 
-            _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(discoveryEndpoint, new HttpClient(handler))
+            _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(discoveryEndpoint,
+                new OpenIdConnectConfigurationRetriever(), new HttpClient(handler))
             {
                 AutomaticRefreshInterval = options.AutomaticRefreshInterval
             };
@@ -112,7 +115,7 @@ namespace IdentityServer3.AccessTokenValidation
         /// <value>
         /// All known security tokens.
         /// </value>
-        public IEnumerable<SecurityToken> SecurityTokens
+        public IEnumerable<SecurityKey> SecurityKeys
         {
             get
             {
@@ -142,7 +145,7 @@ namespace IdentityServer3.AccessTokenValidation
                     throw new InvalidOperationException("Discovery document has no configured signing key. aborting.");
                 }
 
-                var tokens = new List<SecurityToken>();
+                var tokens = new List<SecurityKey>();
                 foreach (var key in result.JsonWebKeySet.Keys)
                 {
                     var rsa = RSA.Create();
@@ -152,7 +155,10 @@ namespace IdentityServer3.AccessTokenValidation
                         Modulus = Base64UrlEncoder.DecodeBytes(key.N)
                     });
 
-                    tokens.Add(new RsaSecurityToken(rsa, key.Kid));
+                    tokens.Add(new RsaSecurityKey(rsa)
+                    {
+                        KeyId = key.Kid
+                    });
                 }
 
                 _issuer = result.Issuer;

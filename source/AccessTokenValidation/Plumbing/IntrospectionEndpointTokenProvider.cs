@@ -61,20 +61,16 @@ namespace IdentityServer3.AccessTokenValidation
                 webRequestHandler.ServerCertificateValidationCallback = options.BackchannelCertificateValidator.Validate;
             }
 
-            if (!string.IsNullOrEmpty(options.ClientId))
+            var invoker = new HttpClient(handler);
+
+            var hasClientId = !string.IsNullOrEmpty(options.ClientId);
+
+            _client = new IntrospectionClient(invoker, new IntrospectionClientOptions
             {
-                _client = new IntrospectionClient(
-                    introspectionEndpoint, 
-                    options.ClientId, 
-                    options.ClientSecret,
-                    handler);
-            }
-            else
-            {
-                _client = new IntrospectionClient(
-                    introspectionEndpoint,
-                    innerHttpMessageHandler: handler);
-            }
+                Address = introspectionEndpoint,
+                ClientId = hasClientId ? options.ClientId : null,
+                ClientSecret = hasClientId ? options.ClientSecret : null,
+            });
 
             _options = options;
         }
@@ -91,10 +87,10 @@ namespace IdentityServer3.AccessTokenValidation
                 }
             }
 
-            IntrospectionResponse response;
+            TokenIntrospectionResponse response;
             try
             {
-                response = await _client.SendAsync(new IntrospectionRequest { Token = context.Token });
+                response = await _client.Introspect(context.Token);
                 if (response.IsError)
                 {
                     _logger.WriteError("Error returned from introspection endpoint: " + response.Error);
@@ -115,12 +111,12 @@ namespace IdentityServer3.AccessTokenValidation
             var claims = new List<Claim>();
             foreach (var claim in response.Claims)
             {
-                if (!string.Equals(claim.Item1, "active", StringComparison.Ordinal))
+                if (!string.Equals(claim.Type, "active", StringComparison.Ordinal))
                 {
-                    claims.Add(new Claim(claim.Item1, claim.Item2));
+                    claims.Add(new Claim(claim.Type, claim.Value, claim.ValueType));
                 }
             }
-            
+
             if (_options.EnableValidationResultCache)
             {
                 await _options.ValidationResultCache.AddAsync(context.Token, claims);

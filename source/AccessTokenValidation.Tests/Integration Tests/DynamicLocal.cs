@@ -5,6 +5,9 @@ using IdentityServer3.AccessTokenValidation;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+
+using IdentityModel.Client;
+
 using Xunit;
 
 namespace AccessTokenValidation.Tests.Integration_Tests
@@ -32,7 +35,9 @@ namespace AccessTokenValidation.Tests.Integration_Tests
             action.
                 ShouldThrow<InvalidOperationException>().
                 And.
-                Message.Should().Contain("IDX10803"); // IDX10803: Unable to create to obtain configuration from: https://discodoc
+                Message.Should().Contain("IDX20803");
+            // IDX20803: Unable to create to obtain configuration from: https://discodoc
+            // The code seems to have changed from IDX10803 to IDX20803 at some point
 
             _options.BackchannelHttpHandler = new DiscoveryEndpointHandler();
 
